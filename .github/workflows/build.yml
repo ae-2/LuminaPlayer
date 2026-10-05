@@ -1,0 +1,39 @@
+name: Build Unsigned iOS IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Select Xcode Version
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+
+    - name: Build App (.app)
+      run: |
+        xcodebuild -project LuminaPlayer.xcodeproj \
+                   -scheme LuminaPlayer \
+                   -sdk iphoneos \
+                   -configuration Release \
+                   -derivedDataPath build \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGNING_REQUIRED=NO
+
+    - name: Package to IPA
+      run: |
+        mkdir -p Payload
+        cp -r build/Build/Products/Release-iphoneos/LuminaPlayer.app Payload/
+        zip -r LuminaPlayer.ipa Payload
+
+    - name: Upload IPA Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: LuminaPlayer-IPA
+        path: LuminaPlayer.ipa
